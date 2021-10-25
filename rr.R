@@ -1,19 +1,20 @@
 library(shiny)
 library(shinydashboard)
 library(ggplot2)
+library("RColorBrewer")
 
 ui<- dashboardPage(
   
-  dashboardHeader(title = "Projet R shiny", titleWidth = 230),
+  dashboardHeader(title = "ShinyHeart ❤️", titleWidth = 230),
   
   dashboardSidebar(
     
     sidebarMenu(
       HTML(paste0(
         "<br>",
-        "<a href='https://www.nps.gov/index.htm' target='_blank'><img style = 'display: block; margin-left: auto; margin-right: auto;' src='tel.png - black.png' width = '186'></a>",
+        "<a href='https://archive.ics.uci.edu/ml/datasets/heart+disease' target='_blank'><img style = 'display: block; margin-left: auto; margin-right: auto;' src='search2.png' width = '186'></a>",
         "<br>",
-        "<p style = 'text-align: center;'><small><a href='https://www.nps.gov/subjects/hfc/arrowhead-artwork.htm' target='_blank'>NPS logo disclaimer</a></small></p>",
+        "<p style = 'text-align: center;'><small><a href='https://www.researchgate.net/figure/The-description-of-Heart-disease-dataset_tbl1_322956561' target='_blank'>Heart Diseases Detection</a></small></p>",
         "<br>"
       )),
       menuItem("Home", tabName = "home", icon = icon("home")),
@@ -54,9 +55,27 @@ ui<- dashboardPage(
   
   dashboardBody(
     tabItems(
+      tabItem("home",
+              includeMarkdown("www/home.md"), 
+              fluidRow(
+                HTML(paste0(
+                  "<br>",
+                  " <img style = 'display: block; margin-left: auto; margin-right: auto;' src='descr.png' width = '800'>",
+                  "<br>",
+                  "<p style = 'text-align: center;'><big><a href='https://www.researchgate.net/figure/The-description-of-Heart-disease-dataset_tbl1_322956561' target='_blank'>The description of Heart disease dataset</a></big></p>",
+                  "<br>"
+                )),
+                
+              )),
       tabItem("visalisationb",
+               
+              HTML(paste0(
+                "<br>",
+                "<h1> Diagramme bivariables </h1>",
+                "<h2> Veuillez choisir les variables à afficher </h2>",
+                "</br>"
+              )),
               
-             
               box(plotOutput("Correlation_Plot"), width = 8),
               fluidRow(
                box(
@@ -189,19 +208,19 @@ server <- function(input, output){
     if ( is.element(input$Xfeatures, quantitative_var)  )
       
     { 
-      ###### X qualitatif et Y quantitatif -> Correlation Simple
+      ###### X quantitaif et Y quantitatif -> Correlation Simple
       
       if ( is.element(input$Yfeatures, quantitative_var)  )
       {
         plot(data()[[input$Xfeatures]], data()[[input$Yfeatures]], xlab = input$Xfeatures, ylab = input$Yfeatures, 
-             col=c(rgb(0.3,0.1,0.4,0.6) , rgb(0.3,0.5,0.4,0.6) , rgb(0.3,0.9,0.4,0.6) ,  rgb(0.3,0.9,0.4,0.6)))
+              )
       }
       ###### X quantitatif et Y qualitatif -> boite parallèle
       else
       {
-        boxplot( data()[[input$Yfeatures]]~data()[[input$Xfeatures]], data = data(),  xlab = input$Xfeatures, ylab = input$Yfeatures,
+        boxplot( data()[[input$Xfeatures]] ~ data()[[input$Yfeatures]], data = data(),  xlab = input$Xfeatures, ylab = input$Yfeatures,
                  horizontal=TRUE, 
-                 col=c(rgb(0.3,0.1,0.4,0.6) , rgb(0.3,0.5,0.4,0.6) , rgb(0.3,0.9,0.4,0.6) ,  rgb(0.3,0.9,0.4,0.6)))
+                 col=brewer.pal(n = 5, name = "Dark2"))
       }
         
     }
@@ -212,17 +231,20 @@ server <- function(input, output){
       if ( is.element(input$Yfeatures, quantitative_var)  )
       {
         boxplot( data()[[input$Yfeatures]]~data()[[input$Xfeatures]], data = data(),  xlab = input$Xfeatures, ylab = input$Yfeatures,
-                 col=c(rgb(0.3,0.1,0.4,0.6) , rgb(0.3,0.5,0.4,0.6) , rgb(0.3,0.9,0.4,0.6) ,  rgb(0.3,0.9,0.4,0.6)))
+                 col=brewer.pal(n = 5, name = "Dark2"), 
+                 legend.text = rownames( table(data()[[input$Xfeatures]],data()[[input$Yfeatures]])))
       }
-      ###### X quaalitatif et Y qualitatif -> diagramme de barre
+      ###### X qualitatif et Y qualitatif -> diagramme de barre
       else
       {
-        barplot(table(data()[[input$Xfeatures]],data()[[input$Yfeatures]]), beside=TRUE, xlab = paste (input$Xfeatures," avec ", input$Yfeatures), 
+        tablee<- table(data()[[input$Xfeatures]],data()[[input$Yfeatures]])
+        
+        barplot(tablee, beside=FALSE, xlab = paste (input$Xfeatures," avec ", input$Yfeatures), 
                 ylab = "L'effectifs", 
                 las=2 , 
-                col=c(rgb(0.3,0.1,0.4,0.6) , rgb(0.3,0.5,0.4,0.6) , rgb(0.3,0.9,0.4,0.6) ,  rgb(0.3,0.9,0.4,0.6)) , 
-                  
-                main="")
+                col=brewer.pal(n = 5, name = "Dark2") , 
+                main="",  legend.text = rownames(tablee))
+   
         
       }
     }

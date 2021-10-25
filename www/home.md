@@ -1,11 +1,15 @@
 ## Welcome !
 <br><br>
-<i> Biodiversity in National Parks</i> is an app that let you visualize [Kaggle's biodiversity dataset](https://www.kaggle.com/nationalparkservice/park-biodiversity).
+<i> Heart Diseases</i> is an app that let you visualize [Kaggle's helth dataset](https://www.kaggle.com/ronitf/heart-disease-uci).
 
-From the left navigation panel you'll be able to access the maps, data and charts concerning the US National Parks and their resident species.
+From the left navigation panel you'll be able to access the loading data and charts concerning the Heart Diseases Caracteristiques  and the prediction with Logistic Regression.
 
-It has been made with [shiny](https://shiny.rstudio.com/) and you may find the code on [github](https://github.com/abenedetti/bioNPS/) and [rcloud](https://rstudio.cloud/project/246130). 
+It has been made with [shiny](https://shiny.rstudio.com/) and you may find the code on [github](https://github.com/Sihamtahi/ShinyApp/).
 
-For a quick walkthrough have a look a the video below.
+## Context
+This database contains 76 attributes, but all published experiments refer to using a subset of 14 of them. In particular, the Cleveland database is the only one that has been used by ML researchers to
+this date. The "goal" field refers to the presence of heart disease in the patient. It is integer valued from 0 (no presence) to 4.
+
+For a quick walkthrough on the dataset have a look a the figure below.
 <br><br><br>
-<iframe style = "display: block; margin: auto;" width="640" height="360" src="https://www.youtube.com/embed/Qu2J2ytWqxA?hd=1"></iframe>
+ 
