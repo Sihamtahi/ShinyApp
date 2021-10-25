@@ -7,7 +7,7 @@ ui<- dashboardPage(
   dashboardHeader(title = "Projet R shiny", titleWidth = 230),
   
   dashboardSidebar(
-     
+    
     sidebarMenu(
       HTML(paste0(
         "<br>",
@@ -46,37 +46,47 @@ ui<- dashboardPage(
           "</script>",
           "<p style = 'text-align: center;'><small>&copy; - <a href='https://alessiobenedetti.com' target='_blank'>alessiobenedetti.com</a> - <script>document.write(yyyy);</script></small></p>")
         )
-    )
-     
-    
-    
-  )),
+      )
+      
+      
+      
+    )),
   
-dashboardBody(
+  dashboardBody(
     tabItems(
-      tabItem("prediction",
+      tabItem("visalisationb",
+              
+             
               box(plotOutput("Correlation_Plot"), width = 8),
+              fluidRow(
+               box(
+                selectInput("Xfeatures", " X Features :", c
+                            ("Age", "Sex", "ChestPainType", "RestingBP", "Cholesterol", "FastingBS", "RestingECG",
+                              "MaxHR", "ExerciseAngina", "Oldpeak", "ST_Slope", "HeartDisease")), width = 4
+              ),
               box(
-                selectInput("features", "Features :", c
-                            ("Sepal.Width", "Petal.Length", "Petal.Width")), width = 4
+                selectInput("Yfeatures", " Y Features :", c
+                            ("Age", "Sex", "ChestPainType", "RestingBP", "Cholesterol", "FastingBS", "RestingECG",
+                              "MaxHR", "ExerciseAngina", "Oldpeak", "ST_Slope", "HeartDisease")), width = 4
+              )
               )
       ),
-    
+      
       tabItem("loading", 
-      fluidPage(
-        fluidRow(
-        column(2, fileInput(inputId="file1", label="choose  CSV file", accept=c("text/plain", ".csv")) ),
-        column(6, verbatimTextOutput(outputId = "summary"))
-        ),
-        
-        fluidRow(
-          column(1, actionButton(inputId = "go", label = "Load")),
-          column(8, offset = 1, tableOutput(outputId= "contents")) 
-          
-        )
-        
-        
-        ) 
+              fluidPage(
+                fluidRow(
+                  column(2, fileInput(inputId="file1", label="choose  CSV file", accept=c("text/plain", ".csv")) ),
+                  column(6, verbatimTextOutput(outputId = "summary"))
+                ),
+                
+                fluidRow(
+                  column(1, actionButton(inputId = "go", label = "Load")),
+                  column(8, offset = 1, tableOutput(outputId= "contents")) 
+                  
+                )
+                
+                
+              ) 
       ),
       tabItem("visualisationu",
               fluidRow(
@@ -88,7 +98,7 @@ dashboardBody(
                 
               ),
               fluidRow(
-                 
+                
                 column(4,offset = 2,   plotOutput(outputId = "centreDisp"))
                 
               ), 
@@ -106,12 +116,16 @@ dashboardBody(
               
               
               
+      )
+      
     )
-    
   )
 )
-)
 server <- function(input, output){
+  
+  qualitative_var <- list("Sex",  "ChestPainType", "FastingBS", "RestingECG", "ExerciseAngina", "ST_Slope", "HeartDisease")
+  quantitative_var <- list( "Age", "RestingBP",  "Cholesterol",  "MaxHR", "Oldpeak")
+  ##############################################################################################
   
   output$summary<- renderPrint({
     t(summary(data())) })
@@ -167,10 +181,59 @@ server <- function(input, output){
   output$myPlot = renderPlot({
     hist(rnorm(1000))
   })
+  
   output$Correlation_Plot <- renderPlot({
     
-    plot(iris$Sepal.Length, iris[[input$features]], xlab = "Sepal length", ylab = "Features")
-  })
+    
+    
+    if ( is.element(input$Xfeatures, quantitative_var)  )
+      
+    { 
+      ###### X qualitatif et Y quantitatif -> Correlation Simple
+      
+      if ( is.element(input$Yfeatures, quantitative_var)  )
+      {
+        plot(data()[[input$Xfeatures]], data()[[input$Yfeatures]], xlab = input$Xfeatures, ylab = input$Yfeatures, 
+             col=c(rgb(0.3,0.1,0.4,0.6) , rgb(0.3,0.5,0.4,0.6) , rgb(0.3,0.9,0.4,0.6) ,  rgb(0.3,0.9,0.4,0.6)))
+      }
+      ###### X quantitatif et Y qualitatif -> boite parallÃ¨le
+      else
+      {
+        boxplot( data()[[input$Yfeatures]]~data()[[input$Xfeatures]], data = data(),  xlab = input$Xfeatures, ylab = input$Yfeatures,
+                 horizontal=TRUE, 
+                 col=c(rgb(0.3,0.1,0.4,0.6) , rgb(0.3,0.5,0.4,0.6) , rgb(0.3,0.9,0.4,0.6) ,  rgb(0.3,0.9,0.4,0.6)))
+      }
+        
+    }
+    else
+    {
+      ###### X quaalitatif et Y quantitatif ->  
+      
+      if ( is.element(input$Yfeatures, quantitative_var)  )
+      {
+        boxplot( data()[[input$Yfeatures]]~data()[[input$Xfeatures]], data = data(),  xlab = input$Xfeatures, ylab = input$Yfeatures,
+                 col=c(rgb(0.3,0.1,0.4,0.6) , rgb(0.3,0.5,0.4,0.6) , rgb(0.3,0.9,0.4,0.6) ,  rgb(0.3,0.9,0.4,0.6)))
+      }
+      ###### X quaalitatif et Y qualitatif -> diagramme de barre
+      else
+      {
+        barplot(table(data()[[input$Xfeatures]],data()[[input$Yfeatures]]), beside=TRUE, xlab = paste (input$Xfeatures," avec ", input$Yfeatures), 
+                ylab = "L'effectifs", 
+                las=2 , 
+                col=c(rgb(0.3,0.1,0.4,0.6) , rgb(0.3,0.5,0.4,0.6) , rgb(0.3,0.9,0.4,0.6) ,  rgb(0.3,0.9,0.4,0.6)) , 
+                  
+                main="")
+        
+      }
+    }
+    
+  
+    
+    
+    
+    
+    })
+  
   output$prediction <- renderPlot({
     
     plot(iris$Sepal.Length, iris[[input$features]], xlab = "X", ylab = "Y")
@@ -198,14 +261,11 @@ server <- function(input, output){
     if(!"fecondite" %in% colnames(data())) return(NULL)
     data()$fecondite 
   })
-
-
-  
   
   output$effectifsHist  <- renderPlot({
     hist(fecondite(), freq = TRUE, cex.axis = 1.5, cex.main = 1.5,
          main = " Histogramme de l'indice de fecondite ", col = "blue",
-         xlab = " Indice de Fecodité ", ylab = " Effectifs ", las =1,
+         xlab = " Indice de FecoditÃ© ", ylab = " Effectifs ", las =1,
          breaks = seq(0.8, 3, by=0.2), right = FALSE, cex.lab = 1.5)
     
     
@@ -214,7 +274,7 @@ server <- function(input, output){
     
     hist(fecondite(), freq= FALSE, cex.axis = 1.5, cex.main = 1.5, 
          main = " Histogramme de l'indice de fecondite ", col = "green",
-         xlab = " Indice de Fecodité ", ylab = " Desnité de fréquence ", las = 1,
+         xlab = " Indice de FecoditÃ© ", ylab = " DesnitÃ© de frÃ©quence ", las = 1,
          breaks = seq(0.8, 3, by=0.2), right = FALSE, cex.lab= 1.5)
   })
   
@@ -226,7 +286,7 @@ server <- function(input, output){
     tmp.hist <- hist(fecondite(), plot= FALSE, breaks= seq(0.8, 3, by=0.2), right= FALSE)
     
     plot(x= tmp.hist$breaks[-1],y= cumsum(tmp.hist$counts), 
-         xlab= "Fecondité (borne sup. de chaque classe)",
+         xlab= "FeconditÃ© (borne sup. de chaque classe)",
          ylab = "Effectifs cumules ", cex.axis = 1.5, cex.lab= 1.5, 
          main = "Courbe cumulative de l'indice fecondite", 
          type = "o", col= "blue", lwd= 2, cex.main = 1.5)
@@ -239,12 +299,15 @@ server <- function(input, output){
     tmp.hist <- hist(fecondite(), plot= FALSE, breaks= seq(0.8, 3, by=0.2), right= FALSE)
     
     plot(x= tmp.hist$breaks[-1],y= cumsum(tmp.hist$density * rep(0.2, 11)), 
-         xlab= "Fecondité (borne sup. de chaque classe)",
+         xlab= "FeconditÃ© (borne sup. de chaque classe)",
          ylab = "Effectifs cumules ", cex.axis = 1.5, cex.lab= 1.5, 
          main = "Courbe cumulative de l'indice fecondite", 
          type = "o", col= "green", lwd= 2, cex.main = 1.5)
     
   })
+  
+  
+  
 }
 
 
