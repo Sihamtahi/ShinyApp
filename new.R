@@ -5,6 +5,7 @@ library(ggcorrplot)
 library("RColorBrewer")
 library("Hmisc")
 library(corrplot)
+library(DataExplorer)
 
 
 ui<- dashboardPage(
@@ -111,6 +112,25 @@ ui<- dashboardPage(
                 
                 
               ) 
+      ),
+      tabItem("prediction",
+              
+              HTML(paste0(
+                "<br>",
+                "<h1> Prediction : Logestic Regression  </h1>",
+                "</br>"
+              )),
+              box(
+                HTML(paste0(
+                  "<br>",
+                  "<h1> Header of dataset  </h1>",
+                  "</br>"
+                )),
+                
+                column(4, tableOutput(outputId = "headerD")),
+                width= 10
+              )
+              
       ),
       tabItem("visualisationu",
               
@@ -409,7 +429,6 @@ server <- function(input, output){
   output$centreDisp <- renderTable({
     
     if ( is.element(input$varHist, quantitative_var)  )
-      
     { 
          
        tabCentreDisp()
@@ -424,7 +443,9 @@ server <- function(input, output){
     })
   
   
-  
+  output$headerD <- renderTable({
+    DataExplorer::create_report(data())
+  })
   output$densDiag <- renderPlot({
     
    ggplot(data()) + geom_density(aes(x = data()[[input$varDens]]), bw = 1)
