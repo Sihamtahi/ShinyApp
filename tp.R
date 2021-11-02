@@ -1,12 +1,29 @@
 library(shiny)
 library(shinydashboard)
 library(ggplot2)
-library(ggcorrplot)
 library("RColorBrewer")
 library("Hmisc")
 library(corrplot)
 library(DataExplorer)
+library(markdown)
+################################
+library(dplyr)
+library (vioplot)
+library(tidyverse)
+library(ggcorrplot)
+library(caTools)
+rsconnect::setAccountInfo(name='5vbfj4-tahi0siham',
+                          token='90E22A200C47CA30D06E79040833CC8C',
+                          secret='UAnhQpy7l8Gb+kbj9rsF1JS9niBK8MaddXdUASN8')
+dataTp <- read_csv('heart.csv')
+set.seed(1234)
+sample_set <- dataTp %>%
+  pull(.) %>% 
+  sample.split(SplitRatio = .7)
 
+bankTrain <- subset(dataTp, sample_set == TRUE)
+bankTest <- subset(dataTp, sample_set == FALSE)
+round(prop.table(table(dataTp$HeartDisease)),3)
 
 ui<- dashboardPage(
   
@@ -26,6 +43,7 @@ ui<- dashboardPage(
       menuItem("Loading Data", tabName = "loading", icon = icon("table")),
       menuItem("Visualisations Univariable", tabName = "visualisationu", icon = icon("stats", lib = "glyphicon") ),
       menuItem("Visualisations Bivariable", tabName = "visalisationb", icon = icon("stats", lib = "glyphicon") ),
+      menuItem("Reports", tabName = "reports",  icon = icon("bar-chart-o")),
       menuItem("Prediction", tabName = "prediction",  icon = icon("tasks")),
       
       
@@ -51,7 +69,8 @@ ui<- dashboardPage(
   dashboardBody(
     tabItems(
       tabItem("home",
-              #includeMarkdown("www/home.md"), 
+              includeMarkdown("www/home.md"), 
+              
               fluidRow(
                 HTML(paste0(
                   "<br>",
@@ -62,6 +81,24 @@ ui<- dashboardPage(
                 )),
                 
               )),
+      tabItem("reports",
+              
+              
+              HTML(paste0(
+                "<br>",
+                "<h1> Dataset Reports </h1>",
+                "<br>",
+                "<h3> These reports have been generated with the DataExplorer library, some of them are not visible through this application. Click <a href='https://htmlpreview.github.io/?https://github.com/Sihamtahi/ShinyApp/blob/master/report.html'>here </a> for a better view </h3>",
+                
+                "<br>"
+                
+              )),
+              tags$iframe(src = './report.html', # put myMarkdown.html to /www
+                          width = '100%', height = '800px', 
+                          frameborder = 0, scrolling = 'auto'
+              )
+              #includeHTML("report.html")
+      ),
       tabItem("visalisationb",
               
               HTML(paste0(
@@ -83,16 +120,7 @@ ui<- dashboardPage(
                               ("Age", "Sex", "ChestPainType", "RestingBP", "Cholesterol", "FastingBS", "RestingECG",
                                 "MaxHR", "ExerciseAngina", "Oldpeak", "ST_Slope", "HeartDisease")), width = 4
                 ),
-                box(
-                  
-                  HTML(paste0(
-                    "<br>",
-                    
-                    "<h2> Correlation</h2>",
-                    "</br>"
-                  )),
-                  
-                  plotOutput("Correlation_tab"), width = 8)
+                
               ),
               
       ),
@@ -123,11 +151,46 @@ ui<- dashboardPage(
               box(
                 HTML(paste0(
                   "<br>",
-                  "<h1> Header of dataset  </h1>",
+                  "<h1> Correlation Matrix  </h1>",
                   "</br>"
                 )),
                 
-                column(4, tableOutput(outputId = "headerD")),
+                column(7, plotOutput(outputId = "headerD")),
+                width= 10
+              ), 
+              #box(
+               # HTML(paste0(
+                #  "<br>",
+                #  "<h1> Chi-square Test:  </h1>",
+                #  "</br>"
+              #  )),
+                
+                #column(4, textOutput( "chiTable")),
+                #width= 10
+             # ), 
+              box(
+                HTML(paste0(
+                  "<br>",
+                  "<h1> Preprocessing </h1>",
+                  
+                  "</br>",
+                  "<h3>  split the data using a stratified sampling approach. 0.7 for training and 0.3 for testing </h3>",
+                  "</br>",
+                  "<h3> The table below represent the Class Balancing </h3>"
+                )),
+                
+                column(4, tableOutput(outputId ="preTable")),
+                width= 10
+              ),
+              box(
+                HTML(paste0(
+                  "<br>",
+                  "<h1> Logistic Regression  </h1>"
+                  
+                   
+                )),
+                
+                column(4, textOutput("text")),
                 width= 10
               )
               
@@ -139,52 +202,51 @@ ui<- dashboardPage(
                 "<h1> Univar Diagrammes  </h1>",
                 "</br>"
               )),
-               
+              
+              
+              box(
                 
-                box(
-                  
-                  HTML(paste0(
-                    "<br>",
-                    "<h2> Distribution  </h2>",
-                    "</br>"
-                  )),
-                  
-                 
-                         #("Age", "Sex", "ChestPainType", "RestingBP", "Cholesterol", "FastingBS", "RestingECG",
-                          #"MaxHR", "ExerciseAngina", "Oldpeak", "ST_Slope", "HeartDisease"), selected = "Age"),
-                        
-                  column(3,    
-                          fluidRow(
+                HTML(paste0(
+                  "<br>",
+                  "<h2> Distribution  </h2>",
+                  "</br>"
+                )),
+                
+                
+                #("Age", "Sex", "ChestPainType", "RestingBP", "Cholesterol", "FastingBS", "RestingECG",
+                #"MaxHR", "ExerciseAngina", "Oldpeak", "ST_Slope", "HeartDisease"), selected = "Age"),
+                
+                column(3,    
+                       fluidRow(
                          selectInput("varHist", "Variable :      ", c
-                              ("Age", "Sex", "ChestPainType", "RestingBP", "Cholesterol", "FastingBS", "RestingECG",
-                                "MaxHR", "ExerciseAngina", "Oldpeak", "ST_Slope", "HeartDisease"), selected = "Age"),
+                                     ("Age", "Sex", "ChestPainType", "RestingBP", "Cholesterol", "FastingBS", "RestingECG",
+                                       "MaxHR", "ExerciseAngina", "Oldpeak", "ST_Slope", "HeartDisease"), selected = "Age"),
                          
-                         selectInput("typeHis", "Variable :      ", c
-                                     ("Effectifs", "Cumulated Effectifs")),
-                
-                           # Bin width for Histogram
-                           sliderInput(inputId = "binsin",
-                                       label = "Number of bins for histogram (class interval):",
-                                       min = 1,
-                                       max = 50,
-                                       value = 20), 
                          # Select variable for color
                          selectInput(inputId = "cHis", 
                                      label = "Color with:",
                                      c( "red", "black", "yellow", "green", "seagreen1", "orange"),
                                      selected = "seagreen1"),
                          
+                         # Bin width for Histogram
+                         sliderInput(inputId = "binsin",
+                                     label = "Number of bins for histogram (class interval):",
+                                     min = 1,
+                                     max = 50,
+                                     value = 20), 
                          
                          
-                         )
-                  ),
-                  column(8,
-                         plotOutput(outputId = "effectifsDiag")),
-                  
-                  
-                  
-                  width = 25
+                         
+                         
+                       )
                 ),
+                column(8,
+                       plotOutput(outputId = "effectifsDiag")),
+                
+                
+                
+                width = 25
+              ),
               
               box(
                 HTML(paste0(
@@ -192,15 +254,15 @@ ui<- dashboardPage(
                   "<h2> Calculations related to the selected variable   </h2>",
                   "</br>"
                 )),
-                column(4, tableOutput(outputId = "centreDisp")), 
-                column(4, plotOutput(outputId = "cercle")), 
+                column(5, tableOutput(outputId = "centreDisp")), 
+                column(7, plotOutput(outputId = "cercle")), 
                 width = 25
-                ),
+              ),
               box(
                 
                 HTML(paste0(
                   "<br>",
-                  "<h2> Density   </h2>",
+                  "<h2> Density (qualitative variables )  </h2>",
                   "</br>"
                 )),
                 
@@ -209,9 +271,7 @@ ui<- dashboardPage(
                 
                 column(3,    
                        fluidRow(
-                         selectInput("varDens", "Variable :      ", c
-                                     ("Age", "Sex", "ChestPainType", "RestingBP", "Cholesterol", "FastingBS", "RestingECG",
-                                       "MaxHR", "ExerciseAngina", "Oldpeak", "ST_Slope", "HeartDisease"), selected = "Age"),
+                         selectInput("varDens", "Variable : ", c ("Age", "RestingBP", "Cholesterol", "MaxHR"), selected = "Age"),
                          
                          
                          # Select variable for color
@@ -224,34 +284,10 @@ ui<- dashboardPage(
                          
                        )
                 ),
-                column(8,
-                       plotOutput(outputId = "densDiag")),
-                fluidRow(
-                  column(4, plotOutput(outputId = "effectifsCumCurve")),
-                  column(4, plotOutput(outputId = "freqCumCurve"))
-                ),
-                
-                fluidRow(
-                  column(4, plotOutput(outputId = "effectifsHist")),   
-                  column(4, plotOutput(outputId = "effectifHistFreqDens"))
-                ), 
-                
-                
+                column(8,plotOutput(outputId = "densDiag")),
                 
                 width = 25
-              ),
-              
-               fluidRow(
-                
-                column(6, plotOutput(outputId = "effectifsCumDiag"))
-              ),
-              fluidRow(
-                column(4,  plotOutput(outputId = "boiteAMoustache"))
-                
               )
-               
-              
-              
               
               
               
@@ -264,6 +300,7 @@ server <- function(input, output){
   
   qualitative_var <- list("Sex",  "ChestPainType", "FastingBS", "RestingECG", "ExerciseAngina", "ST_Slope", "HeartDisease")
   quantitative_var <- list( "Age", "RestingBP",  "Cholesterol",  "MaxHR", "Oldpeak")
+  quantitative_var_Dens <- list("Sex",  "ChestPainType", "ExerciseAngina", "ST_Slope")
   ##############################################################################################
   
   output$summary<- renderPrint({
@@ -298,7 +335,7 @@ server <- function(input, output){
     tab <- table(data()[[input$varHist]])
     summary.tmp<- cbind.data.frame(tab, prop.table(tab))
     summary.tmp <- summary.tmp[ ,c(1,2,4)]
-   # colnames(summary.tmp) <- c("categories", "counts ", "percentages")
+    # colnames(summary.tmp) <- c("categories", "counts ", "percentages")
     
   })
   
@@ -336,7 +373,7 @@ server <- function(input, output){
       
       if ( is.element(input$Yfeatures, quantitative_var)  )
       {
-        plot(data()[[input$Xfeatures]], data()[[input$Yfeatures]], xlab = input$Xfeatures, ylab = input$Yfeatures, 
+        plot(data()[[input$Xfeatures]], data()[[input$Yfeatures]], xlab = input$Xfeatures, ylab = input$Yfeatures,
         )
       }
       ###### X quantitatif et Y qualitatif -> boite parallÃ¨le
@@ -374,16 +411,18 @@ server <- function(input, output){
       }
     }
     
-  
+    
   })
   
   output$prediction <- renderPlot({
     
-    plot(iris$Sepal.Length, iris[[input$features]], xlab = "X", ylab = "Y")
+    
+    
+    glimpse(data())
   })
   
   output$effectifsDiag <- renderPlot({
-   # plot(table(data()), col = "green4", xlab= "age", ylab ="Effectifs", main="Distribution des effectifs pour l'age")
+    # plot(table(data()), col = "green4", xlab= "age", ylab ="Effectifs", main="Distribution des effectifs pour l'age")
     if ( is.element(input$varHist, quantitative_var)  )
       
     { 
@@ -395,7 +434,7 @@ server <- function(input, output){
       ggplot(data = data(), aes_string(x = input$varHist)) +
         geom_bar( color="black", fill=input$cHis)+theme_minimal() + ggtitle("histogram chart")  
     }
-  
+    
     
   })
   
@@ -411,28 +450,27 @@ server <- function(input, output){
   })
   output$cercle <- renderPlot({ 
     
-    EffType = as.vector(table(data()[[input$varHist]]))
-    Freq = EffType/length(data()[[input$varHist]])
+    if ( is.element(input$varHist, quantitative_var_Dens)  )
+    {
+      ggplot(data = data()) + 
+        geom_bar(mapping = aes(x = 1, fill = data()[[input$varHist]], ), position = "fill") + coord_polar(theta = "y") + labs(fill = input$varHist)
+    }
     
-    df = data.frame(type = levels(data()[[input$varHist]]), value = as.vector(Freq))
-    g3 = ggplot(df, aes(x = "", y = value, fill = type)) + geom_bar(width = 1, stat = "identity")
-    g4 = g3 + coord_polar("y", start = 0)
-    #ggplot(data(), aes(x = "", y = data()[[input$varDens]], fill = data()[[input$varDens]])) + geom_bar(width = 1, stat = "identity")
     
-    })
+  })
   output$Correlation_tab <- renderPlot({ 
     
     ggplot(data(), aes(x = data[["Age"]], fill = data()[["HeartDisease"]])) + geom_density(alpha = .3)
     
-    })
+  })
   
   output$centreDisp <- renderTable({
     
     if ( is.element(input$varHist, quantitative_var)  )
     { 
-         
-       tabCentreDisp()
-    
+      
+      tabCentreDisp()
+      
     }
     else
     {
@@ -440,69 +478,55 @@ server <- function(input, output){
     }
     
     
+  })
+  
+  
+  output$headerD <- renderPlot({
+    
+   # header(data)
+   # sapply(data, function(x) sum(is.na(x)))
+   # summary(dataTp)
+    numericVarName <- names(which(sapply(dataTp, is.numeric)))
+    corr <- cor(dataTp[,numericVarName], use = 'pairwise.complete.obs')
+    ggcorrplot(corr, lab = TRUE)
     })
-  
-  
-  output$headerD <- renderTable({
-    DataExplorer::create_report(data())
+    output$densDiag <- renderPlot({
+    
+    ggplot(data()) + geom_density(aes(x = data()[[input$varDens]]), bw = 3, color= input$cDens)
+    
+      
   })
-  output$densDiag <- renderPlot({
-    
-   ggplot(data()) + geom_density(aes(x = data()[[input$varDens]]), bw = 1)
-    
-     
-     
-    
-  })
+    logit.mod <- glm(HeartDisease ~., family = binomial(link = 'logit'), data = dataTp)
+    logit.pred.prob <- predict(logit.mod, bankTest, type = 'response')
+    logit.pred <- as.factor(ifelse(logit.pred.prob > 0.5, 1, 0))
+    head(bankTest,10)
+    output$text <-  renderText({
+      summary(logit.mod)
+       
+    })
+    output$preTable<- renderTable({
+      round(prop.table(table(dataTp$HeartDisease)),3)
+    })
+    output$chiTable<- renderText({
+      chi.square <- vector()
+      p.value <- vector()
+      cateVar <- dataTp %>% 
+        dplyr::select(-HeartDisease) %>% 
+        keep(is.factor)
+      
+      for (i in 1:length(cateVar)) {
+        p.value[i] <- chisq.test(dataTp$HeartDisease, unname(unlist(cateVar[i])), correct = FALSE)[3]$p.value
+        chi.square[i] <- unname(chisq.test(bankChurn$HeartDisease, unname(unlist(cateVar[i])), correct = FALSE)[1]$statistic)
+      }
+      
+      chi_sqaure_test <- tibble(variable = names(cateVar)) %>% 
+        add_column(chi.square = chi.square) %>% 
+        add_column(p.value = p.value)
+      knitr::kable(chi_sqaure_test)
+       
+      
+    })
   ##############################
-  fecondite <- reactive({
-    if(!"fecondite" %in% colnames(data())) return(NULL)
-    data()[[input$varDens]]$fecondite 
-  })
-  
-  output$effectifsHist  <- renderPlot({
-    hist(data()[[input$varDens]], freq = TRUE, cex.axis = 1.5, cex.main = 1.5,
-         main = " Histogramme de l'indice de fecondite ", col = "blue",
-         xlab = " Indice de Fecodité ", ylab = " Effectifs ", las =1,
-         breaks = seq(0.8, 3, by=0.2), right = FALSE, cex.lab = 1.5)
-    
-    
-  })
-  output$effectifHistFreqDens <- renderPlot({
-    
-    hist(fecondite(), freq= FALSE, cex.axis = 1.5, cex.main = 1.5, 
-         main = " Histogramme de l'indice de fecondite ", col = "green",
-         xlab = " Indice de FecoditÃ© ", ylab = " DesnitÃ© de frÃ©quence ", las = 1,
-         breaks = seq(0.8, 3, by=0.2), right = FALSE, cex.lab= 1.5)
-  })
-  
-  
-  
-  
-  
-  output$effectifsCumCurve <-  renderPlot({
-    tmp.hist <- hist(fecondite(), plot= FALSE, breaks= seq(0.8, 3, by=0.2), right= FALSE)
-    
-    plot(x= tmp.hist$breaks[-1],y= cumsum(tmp.hist$counts), 
-         xlab= "FeconditÃ© (borne sup. de chaque classe)",
-         ylab = "Effectifs cumules ", cex.axis = 1.5, cex.lab= 1.5, 
-         main = "Courbe cumulative de l'indice fecondite", 
-         type = "o", col= "blue", lwd= 2, cex.main = 1.5)
-    
-  })
-  
-  
-  
-  output$freqCumCurve <-  renderPlot({
-    tmp.hist <- hist(fecondite(), plot= FALSE, breaks= seq(0.8, 3, by=0.2), right= FALSE)
-    
-    plot(x= tmp.hist$breaks[-1],y= cumsum(tmp.hist$density * rep(0.2, 11)), 
-         xlab= "FeconditÃ© (borne sup. de chaque classe)",
-         ylab = "Effectifs cumules ", cex.axis = 1.5, cex.lab= 1.5, 
-         main = "Courbe cumulative de l'indice fecondite", 
-         type = "o", col= "green", lwd= 2, cex.main = 1.5)
-    
-  })
   
   
   
